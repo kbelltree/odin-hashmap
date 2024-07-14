@@ -17,13 +17,11 @@ class HashMap {
         for (let i = 0; i < key.length; i++) {
           hashCode = (primeNumber * hashCode + key.charCodeAt(i)) % this.capacity;
         }    
-        console.log(`Hash for key "${key}" is ${hashCode}`);
         return hashCode;
       } 
     
     set(key, value) {
         const index = this.hash(key); 
-        console.log(`Set: Index for key "${key}" is ${index}`)
         if (index < 0 || index >= this.buckets.length) {
             throw new Error("Trying to access index out of bound");
         }  
@@ -36,19 +34,16 @@ class HashMap {
                 return; 
             } 
         }
-        console.log(`Updated key "${key}" with value "${value}" at index ${index} data count is ${this.dataCount}`);
+        
         // otherwise add the new key value data
         targetBucket.push([key, value]);
          
         // expand the capacity if the buckets are nearly full
         const threshold = this.capacity * this.loadFactor; 
         if (threshold <= this.dataCount){
-            console.log(`Threshold is now "${threshold}" triggered by key "${key}"`);
             this.buckets = this.expandCapacity();
         }       
-
         this.dataCount++;  
-        console.log(`Added key "${key}" with value "${value}" at index ${index} data count is ${this.dataCount}`);
     }
 
     get(key){
@@ -59,11 +54,9 @@ class HashMap {
         const targetBucket = this.buckets[index];
         for (let data of targetBucket) {
             if(data[0] === key) {
-                console.log(`Updated key "${key}" with value "${data[1]}" at index ${index}`);
                 return data[1]; 
             }   
         }
-        console.log(`Key "${key}" not found at index ${index}`);
         return null;  
     }
 
@@ -147,14 +140,133 @@ class HashMap {
         let newBuckets = Array.from({ length: this.capacity }, () => []);
         const deHashedData = this.entries();
         
-        // Rehash each data and store in the new buckets
+        // rehash each data and store in the new buckets
         deHashedData.forEach((data) => {
-            let index = this.hash(data[0]);
-            console.log(`Expanded: Added key "${data[0]}" with value "${data[1]}" at index ${index}`);       
+            let index = this.hash(data[0]);      
             newBuckets[index].push(data); 
         })
         return newBuckets; 
     }
 }
 
-module.exports = { HashMap };
+class HashSet {
+    constructor(capacity = 16, loadFactor = 0.75){
+        this.initialCapacity = capacity; 
+        this.capacity = capacity; 
+        this.loadFactor = loadFactor; 
+        this.buckets = Array.from({ length: this.capacity }, () => []);
+        this.dataCount = 0;
+    }
+
+    hash(key) {
+        if (typeof key !== "string" || key === ""){
+            throw new Error("Only non-empty strings are accepted as key");
+        }
+        let hashCode = 0;       
+        const primeNumber = 31;
+        for (let i = 0; i < key.length; i++) {
+          hashCode = (primeNumber * hashCode + key.charCodeAt(i)) % this.capacity;
+        }    
+        return hashCode;
+      } 
+    
+    set(key) {
+        const index = this.hash(key); 
+        if (index < 0 || index >= this.buckets.length) {
+            throw new Error("Trying to access index out of bound");
+        }  
+        const targetBucket = this.buckets[index];
+        for (let i = 0; i < targetBucket.length; i++){
+            if (targetBucket[i] === key){
+                return; 
+            } 
+        }
+        targetBucket.push(key);        
+        const threshold = this.capacity * this.loadFactor; 
+        if (threshold <= this.dataCount){
+            this.buckets = this.expandCapacity();
+        }       
+        this.dataCount++;  
+    }
+
+    get(key){
+        const index = this.hash(key);
+        if (index < 0 || index >= this.buckets.length) {
+            throw new Error("Trying to access index out of bound");
+        }
+        const targetBucket = this.buckets[index];
+        for (let i = 0; i < targetBucket.length; i++) {
+            if(targetBucket[i] === key) {    
+                return key; 
+            }   
+        }
+        return null;  
+    }
+
+    has(key) {
+        const index = this.hash(key);
+        if (index < 0 || index >= this.buckets.length) {
+            throw new Error("Trying to access index out of bound");
+        }
+        const targetBucket = this.buckets[index];
+        for (let i = 0; i < targetBucket.length; i++) {
+            if(targetBucket[i] === key) {
+                return true; 
+            }   
+        }
+        return false; 
+    }
+
+    remove(key){
+        const index = this.hash(key);
+        if (index < 0 || index >= this.buckets.length) {
+            throw new Error("Trying to access index out of bound");
+        }
+        const targetBucket = this.buckets[index];
+        for (let i = 0; i < targetBucket.length; i++){
+            if(targetBucket[i] === key){
+                targetBucket.splice(i, 1);
+                this.dataCount--;
+                return true; 
+            }
+        }
+        return false; 
+    }
+
+    length() {
+        let counter = 0; 
+        for (let i = 0; i < this.buckets.length; i++){
+            counter += this.buckets[i].length; 
+        }
+        return counter;
+    }
+
+    clear() {
+        this.capacity = this.initialCapacity; 
+        this.buckets = Array.from({ length: this.initialCapacity }, () => []);
+        this.dataCount = 0;
+    }
+
+    keys() {
+        let array = [];
+        this.buckets.forEach((bucket) => {
+            bucket.forEach(key => {
+                array.push(key);
+            });
+        })
+        return array; 
+    }
+
+    expandCapacity() {
+        this.capacity *= 2; 
+        let newBuckets = Array.from({ length: this.capacity }, () => []);
+        const deHashedData = this.keys();     
+        deHashedData.forEach((key) => {
+            let index = this.hash(key);     
+            newBuckets[index].push(key); 
+        })
+        return newBuckets; 
+    }
+}
+
+module.exports = { HashMap, HashSet };
